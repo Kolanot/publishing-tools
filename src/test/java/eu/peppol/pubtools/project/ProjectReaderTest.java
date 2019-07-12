@@ -28,6 +28,7 @@ import com.helger.commons.io.resource.FileSystemResource;
 
 import eu.peppol.pubtools.TestData;
 import eu.peppol.pubtools.project.v1.P1ProjectType;
+import eu.peppol.pubtools.project.v1.P1ResourceType;
 
 public final class ProjectReaderTest
 {
@@ -45,6 +46,13 @@ public final class ProjectReaderTest
 
       final P1ProjectType aProject = ProjectReader.read (new FileSystemResource (aProjectXml));
       assertNotNull (aProject);
+
+      for (final P1ResourceType aRes : aProject.getResource ())
+      {
+        final String sPath = aRes.getPath ();
+        final File aResFile = new File (aDir, sPath);
+        assertTrue ("Referenced file is missing: " + aResFile.getAbsolutePath (), aResFile.exists ());
+      }
     }
   }
 }
