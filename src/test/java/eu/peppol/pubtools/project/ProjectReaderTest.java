@@ -30,11 +30,9 @@ import com.helger.schematron.pure.exchange.SchematronReadException;
 import com.helger.schematron.pure.model.PSSchema;
 
 import eu.peppol.pubtools.TestData;
-import eu.peppol.pubtools.codelist.CodeListReader;
 import eu.peppol.pubtools.codelist.v1.C1CodeListType;
 import eu.peppol.pubtools.project.v1.P1ProjectType;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
-import eu.peppol.pubtools.structure.StructureReader;
 import eu.peppol.pubtools.structure.v1.S1StructureType;
 
 public final class ProjectReaderTest
@@ -99,6 +97,8 @@ public final class ProjectReaderTest
             assertNotNull ("Failed to read Schematrom file: " + aResFile.getAbsolutePath (), aSchema);
             break;
           }
+          default:
+            throw new IllegalStateException ("Unsupported type " + aRes.getType ());
         }
       }
     }
