@@ -22,6 +22,14 @@
           xmlns:xsd="http://www.w3.org/2001/XMLSchema"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <globalBindings typesafeEnumMaxMembers="2000" typesafeEnumMemberName="generateError" />
+  <bindings schemaLocation="../resources/schemas/codelist-1.xsd" node="/xsd:schema">
+    <schemaBindings>
+      <package name="eu.peppol.pubtools.codelist.v1" />
+      <nameXmlTransform>
+        <typeName prefix="C1" />
+      </nameXmlTransform>
+    </schemaBindings>
+  </bindings>
   <bindings schemaLocation="../resources/schemas/project-1.xsd" node="/xsd:schema">
     <schemaBindings>
       <package name="eu.peppol.pubtools.project.v1" />
