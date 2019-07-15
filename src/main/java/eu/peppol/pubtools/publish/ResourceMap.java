@@ -20,6 +20,9 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.helger.commons.annotation.Nonempty;
 import com.helger.commons.collection.impl.CommonsLinkedHashMap;
 import com.helger.commons.collection.impl.ICommonsList;
@@ -35,6 +38,8 @@ import com.helger.html.hc.render.HCRenderer;
 
 public class ResourceMap extends CommonsLinkedHashMap <String, IReadableResource>
 {
+  private static final Logger LOGGER = LoggerFactory.getLogger (ResourceMap.class);
+
   public void addHtml (@Nonnull @Nonempty final String sRelativeFilename, @Nonnull final HCHtml aHtml)
   {
     final HCConversionSettings aConversionSettings = HCSettings.getMutableConversionSettings ();
@@ -60,8 +65,12 @@ public class ResourceMap extends CommonsLinkedHashMap <String, IReadableResource
   {
     for (final Map.Entry <String, IReadableResource> aEntry : entrySet ())
     {
-      StreamHelper.copyInputStreamToOutputStreamAndCloseOS (aEntry.getValue ().getBufferedInputStream (),
-                                                            aDest.getOutputStream (aEntry.getKey ()));
+      if (StreamHelper.copyInputStreamToOutputStreamAndCloseOS (aEntry.getValue ().getBufferedInputStream (),
+                                                                aDest.getOutputStream (aEntry.getKey ()))
+                      .isFailure ())
+      {
+        LOGGER.error ("Faied to create '" + aEntry.getKey () + "'");
+      }
     }
   }
 }

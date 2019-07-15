@@ -37,6 +37,12 @@ public class PublishingDestination
   }
 
   @Nonnull
+  public File getBaseDir ()
+  {
+    return m_aBaseDir;
+  }
+
+  @Nonnull
   public OutputStream getOutputStream (@Nonnull final String sOutputPath)
   {
     String sRealPath = sOutputPath;

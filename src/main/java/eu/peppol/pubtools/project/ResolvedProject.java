@@ -116,9 +116,7 @@ public class ResolvedProject
 
   public void forEachSyntax (@Nonnull final Consumer <? super ResolvedSyntax> aConsumer)
   {
-    // Sort
-    for (final ResolvedSyntax aEntry : CollectionHelper.getSorted (m_aSyntax.values (),
-                                                                   Comparator.comparing (ResolvedSyntax::getTitle)))
+    for (final ResolvedSyntax aEntry : m_aSyntax.values ())
       aConsumer.accept (aEntry);
   }
 

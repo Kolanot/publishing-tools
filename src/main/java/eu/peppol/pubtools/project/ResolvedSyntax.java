@@ -18,6 +18,7 @@ package eu.peppol.pubtools.project;
 import javax.annotation.Nonnull;
 
 import com.helger.commons.ValueEnforcer;
+import com.helger.commons.io.file.FilenameHelper;
 
 import eu.peppol.pubtools.project.v1.P1ResourceType;
 import eu.peppol.pubtools.structure.v1.S1StructureType;
@@ -26,6 +27,7 @@ public final class ResolvedSyntax
 {
   private final P1ResourceType m_aRes;
   private final S1StructureType m_aStructure;
+  private final String m_sURLDir;
 
   public ResolvedSyntax (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aStructure)
   {
@@ -33,6 +35,8 @@ public final class ResolvedSyntax
     ValueEnforcer.notNull (aStructure, "Structure");
     m_aRes = aRes;
     m_aStructure = aStructure;
+    // Ensure that it is a valid filename
+    m_sURLDir = FilenameHelper.getAsSecureValidASCIIFilename (aStructure.getTerm ().getValue ());
   }
 
   @Nonnull
@@ -51,5 +55,11 @@ public final class ResolvedSyntax
   public String getTitle ()
   {
     return m_aRes.getTitle ();
+  }
+
+  @Nonnull
+  public String getURLDir ()
+  {
+    return m_sURLDir;
   }
 }

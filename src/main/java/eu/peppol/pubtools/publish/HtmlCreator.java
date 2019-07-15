@@ -21,6 +21,9 @@ import java.util.Map;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.helger.commons.ValueEnforcer;
 import com.helger.commons.collection.impl.CommonsArrayList;
 import com.helger.commons.collection.impl.CommonsLinkedHashMap;
@@ -68,6 +71,7 @@ import eu.peppol.pubtools.publish.html.HCSimpleTable;
 
 public class HtmlCreator
 {
+  private static final Logger LOGGER = LoggerFactory.getLogger (HtmlCreator.class);
   private static final ICSSClassProvider CSS_CLASS_CODE_LIST_CODE = DefaultCSSClassProvider.create ("code-list-code");
 
   private HtmlCreator ()
@@ -91,8 +95,7 @@ public class HtmlCreator
     aHead.addCSS (HCLink.createCSSLink (new SimpleURL ("https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"))
                         .setIntegrity ("sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T")
                         .setCrossOrigin (EHCCORSSettings.ANONYMOUS));
-    aHead.addCSS (HCLink.createCSSLink (new SimpleURL (sLinkPrefix + "css/structure.css")));
-    aResourceMap.put ("css/structure.css", new ClassPathResource ("html/assets/structure.css"));
+    aHead.addCSS (HCLink.createCSSLink (new SimpleURL (sLinkPrefix + "css/default.css")));
 
     // body
     final HCBody aBody = aHtml.body ();
@@ -123,8 +126,9 @@ public class HtmlCreator
         aProject.forEachSyntax (x -> aMap.put (x.getTitle (), x));
         for (final Map.Entry <String, ResolvedSyntax> aEntry : aMap.entrySet ())
         {
-          // TODO create link
-          aDropDown.createAndAddItem ().addChild (aEntry.getKey ());
+          aDropDown.createAndAddItem ()
+                   .setHref (new SimpleURL (sLinkPrefix + "syntax/" + aEntry.getValue ().getURLDir () + "/index.html"))
+                   .addChild (aEntry.getKey ());
         }
         final BootstrapNavbarNav aNav = aToggleable.addAndReturnNav ();
         aNav.addItem ().addNavDropDown ("Syntax", aDropDown);
@@ -203,11 +207,46 @@ public class HtmlCreator
     return aBreadcrumb;
   }
 
-  private static void _createStructure (@Nonnull final ResolvedProject aProject,
-                                        @Nonnull final ResolvedSyntax aStruct,
-                                        @Nonnull final ResourceMap aResourceMap)
+  private static void _createSyntax (@Nonnull final ResolvedProject aProject,
+                                     @Nonnull final ResolvedSyntax aSyntax,
+                                     @Nonnull final ResourceMap aResourceMap)
   {
+    final HCHtml aHtml = _createEmptyPage (aProject, 2, aResourceMap);
+    aHtml.head ().setPageTitle (aProject.getProject ().getName () + " | " + aSyntax.getTitle ());
+    final HCBody aBody = aHtml.body ();
+    aBody.addChild (_createBreadcrumbs ("Home", "../../index.html", "Syntaxes", "../index.html", aSyntax.getTitle ()));
 
+    final BootstrapContainer aMain = aBody.addAndReturnChild (new BootstrapContainer ());
+    aMain.addChild (new BootstrapPageHeader ().addChild (aSyntax.getTitle ()));
+
+    // TODO
+
+    aResourceMap.addHtml ("syntax/" + aSyntax.getURLDir () + "/index.html", aHtml);
+  }
+
+  private static void _createSyntaxOverview (@Nonnull final ResolvedProject aProject,
+                                             @Nonnull final ResourceMap aResourceMap)
+  {
+    final ICommonsList <ResolvedSyntax> aList = new CommonsArrayList <> ();
+    aProject.forEachSyntax (aList::add);
+
+    final HCHtml aHtml = _createEmptyPage (aProject, 1, aResourceMap);
+    aHtml.head ().setPageTitle (aProject.getProject ().getName () + " | Syntaxes");
+
+    final HCBody aBody = aHtml.body ();
+    aBody.addChild (_createBreadcrumbs ("Home", "../index.html", "Syntaxes"));
+    final BootstrapContainer aMain = aBody.addAndReturnChild (new BootstrapContainer ());
+    aMain.addChild (new BootstrapPageHeader ().addChild ("Syntaxes"));
+
+    final HCUL aUL = aMain.addAndReturnChild (new HCUL ());
+    for (final ResolvedSyntax aItem : aList)
+      aUL.addItem (new HCA (new SimpleURL (aItem.getURLDir () + "/index.html")).addChild (aItem.getTitle ()));
+
+    aResourceMap.addHtml ("syntax/index.html", aHtml);
+
+    // Create all code lists
+    for (final ResolvedSyntax aItem : aList)
+      _createSyntax (aProject, aItem, aResourceMap);
   }
 
   private static void _createRule (@Nonnull final ResolvedProject aProject,
@@ -272,14 +311,14 @@ public class HtmlCreator
     aMain.addChild (new BootstrapPageHeader ().addChild ("Code lists"));
 
     final HCUL aUL = aMain.addAndReturnChild (new HCUL ());
-    for (final ResolvedCodeList aCL : aList)
-      aUL.addItem (new HCA (new SimpleURL (aCL.getURLDir () + "/index.html")).addChild (aCL.getTitle ()));
+    for (final ResolvedCodeList aItem : aList)
+      aUL.addItem (new HCA (new SimpleURL (aItem.getURLDir () + "/index.html")).addChild (aItem.getTitle ()));
 
     aResourceMap.addHtml ("codelist/index.html", aHtml);
 
     // Create all code lists
-    for (final ResolvedCodeList aCL : aList)
-      _createCodeList (aProject, aCL, aResourceMap);
+    for (final ResolvedCodeList aItem : aList)
+      _createCodeList (aProject, aItem, aResourceMap);
   }
 
   private static void _createHome (@Nonnull final ResolvedProject aProject, @Nonnull final ResourceMap aResourceMap)
@@ -349,9 +388,14 @@ public class HtmlCreator
   {
     // Static resources
     final ResourceMap aResourceMap = new ResourceMap ();
+    aResourceMap.put ("css/default.css", new ClassPathResource ("template/default.css"));
 
     // Create child pages
-    aProject.forEachSyntax (x -> _createStructure (aProject, x, aResourceMap));
+
+    // Syntax files
+    if (aProject.hasSyntax ())
+      _createSyntaxOverview (aProject, aResourceMap);
+
     aProject.forEachRule (x -> _createRule (aProject, x, aResourceMap));
 
     // Create codelists
@@ -363,5 +407,6 @@ public class HtmlCreator
 
     // Write all resources
     aResourceMap.writeAll (aDest);
+    LOGGER.info ("Successfully wrote " + aResourceMap.size () + " files to " + aDest.getBaseDir ().getPath ());
   }
 }
