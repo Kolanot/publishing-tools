@@ -220,7 +220,8 @@ public class HtmlCreator
 
   private static void _createSyntaxRule (@Nonnull final S1SomeType aElem,
                                          @Nonnegative final int nLevel,
-                                         @Nonnull final BootstrapTable aTable)
+                                         @Nonnull final BootstrapTable aTable,
+                                         final boolean bRecursive)
   {
     final HCRow aRow = aTable.addBodyRow ();
 
@@ -294,17 +295,18 @@ public class HtmlCreator
       // Add attributes
       for (final S1AttributeType aAttr : ((S1ElementType) aElem).getAttribute ())
       {
-        _createSyntaxRule (aAttr, nLevel + 1, aTable);
+        _createSyntaxRule (aAttr, nLevel + 1, aTable, bRecursive);
       }
 
       // Recurse into children
-      for (final Object aChild : ((S1ElementType) aElem).getElementOrInclude ())
-      {
-        if (aChild instanceof S1ElementType)
-          _createSyntaxRule ((S1ElementType) aChild, nLevel + 1, aTable);
-        else
-          throw new IllegalArgumentException ("Unsupported child: " + aChild);
-      }
+      if (bRecursive)
+        for (final Object aChild : ((S1ElementType) aElem).getElementOrInclude ())
+        {
+          if (aChild instanceof S1ElementType)
+            _createSyntaxRule ((S1ElementType) aChild, nLevel + 1, aTable, bRecursive);
+          else
+            throw new IllegalArgumentException ("Unsupported child: " + aChild);
+        }
     }
   }
 
@@ -329,7 +331,7 @@ public class HtmlCreator
     aTable.addHeaderRow ().addCells ("Card", "Name", "Description");
 
     final S1ElementType aRootElem = aSyntax.getStructure ().getDocument ();
-    _createSyntaxRule (aRootElem, 0, aTable);
+    _createSyntaxRule (aRootElem, 0, aTable, true);
 
     aResourceMap.addHtml (sDestFilename, aHtml);
   }
