@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.peppol.pubtools.publish;
+package eu.peppol.pubtools.publish.html;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -72,7 +72,8 @@ import eu.peppol.pubtools.project.ResolvedDownload;
 import eu.peppol.pubtools.project.ResolvedProject;
 import eu.peppol.pubtools.project.ResolvedSyntax;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
-import eu.peppol.pubtools.publish.html.HCSimpleTable;
+import eu.peppol.pubtools.publish.PublishingDestination;
+import eu.peppol.pubtools.publish.ResourceMap;
 import eu.peppol.pubtools.structure.v1.S1AttributeType;
 import eu.peppol.pubtools.structure.v1.S1ElementType;
 import eu.peppol.pubtools.structure.v1.S1SomeType;
@@ -467,7 +468,8 @@ public class HtmlCreator
     {
       final BootstrapListGroup aLG = new BootstrapListGroup ();
       aProject.forEachSyntax (x -> {
-        aLG.addItem (x.getTitle ());
+        aLG.addItem (new HCA ().setHref (new SimpleURL ("syntax/" + x.getURLDir () + "/index.html"))
+                               .addChild (x.getTitle ()));
       });
       aTable.addRow ("Syntax", aLG);
     }
@@ -485,7 +487,8 @@ public class HtmlCreator
     {
       final BootstrapListGroup aLG = new BootstrapListGroup ();
       aProject.forEachCodeList (x -> {
-        aLG.addItem (x.getTitle ());
+        aLG.addItem (new HCA ().setHref (new SimpleURL ("codelist/" + x.getURLDir () + "/index.html"))
+                               .addChild (x.getTitle ()));
       });
       aTable.addRow ("Code lists", aLG);
     }

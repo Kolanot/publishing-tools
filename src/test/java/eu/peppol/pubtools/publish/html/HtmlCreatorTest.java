@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.peppol.pubtools.publish;
+package eu.peppol.pubtools.publish.html;
 
 import java.io.File;
 
@@ -26,6 +26,8 @@ import com.helger.commons.timing.StopWatch;
 import eu.peppol.pubtools.TestData;
 import eu.peppol.pubtools.project.ProjectReader;
 import eu.peppol.pubtools.project.ResolvedProject;
+import eu.peppol.pubtools.publish.PublishingDestination;
+import eu.peppol.pubtools.publish.html.HtmlCreator;
 
 public final class HtmlCreatorTest
 {
