@@ -73,7 +73,9 @@ import eu.peppol.pubtools.project.ResolvedProject;
 import eu.peppol.pubtools.project.ResolvedSyntax;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
 import eu.peppol.pubtools.publish.html.HCSimpleTable;
+import eu.peppol.pubtools.structure.v1.S1AttributeType;
 import eu.peppol.pubtools.structure.v1.S1ElementType;
+import eu.peppol.pubtools.structure.v1.S1SomeType;
 import eu.peppol.pubtools.structure.v1.S1ValueEnum;
 import eu.peppol.pubtools.structure.v1.S1ValueType;
 
@@ -215,7 +217,7 @@ public class HtmlCreator
     return aBreadcrumb;
   }
 
-  private static void _createSyntaxRule (@Nonnull final S1ElementType aElem,
+  private static void _createSyntaxRule (@Nonnull final S1SomeType aElem,
                                          @Nonnegative final int nLevel,
                                          @Nonnull final BootstrapTable aTable)
   {
@@ -223,16 +225,32 @@ public class HtmlCreator
 
     // Cardinality
     {
-      String sCard = aElem.getCardinality ();
-      if (sCard == null && nLevel == 0)
-        sCard = "1..1";
+      String sCard = null;
+      if (aElem instanceof S1ElementType)
+      {
+        sCard = ((S1ElementType) aElem).getCardinality ();
+        if (sCard == null && nLevel == 0)
+          sCard = "1..1";
+      }
+      else
+      {
+        sCard = ((S1AttributeType) aElem).getUsage ();
+        if ("optional".equalsIgnoreCase (sCard))
+          sCard = "0..1";
+        else
+          if ("mandatory".equalsIgnoreCase (sCard))
+            sCard = "1..1";
+      }
       aRow.addCell (sCard);
     }
 
     // Name
     {
-      final String sName = StringHelper.getRepeated ("• ", nLevel) + aElem.getTerm ().getValue ();
-      aRow.addCell (sName);
+      final String sPrefix = StringHelper.getRepeated ("• ", nLevel);
+      String sName = aElem.getTerm ().getValue ();
+      if (aElem instanceof S1AttributeType)
+        sName = '@' + sName;
+      aRow.addCell (sPrefix + sName);
     }
 
     // Description
@@ -247,7 +265,11 @@ public class HtmlCreator
       if (StringHelper.hasText (sDesc))
         aNL.addChild (new HCDiv ().addChild (new HCEM ().addChild (sDesc)));
 
-      final S1ValueType aValue = aElem.getValue ();
+      final S1ValueType aValue;
+      if (aElem instanceof S1ElementType)
+        aValue = ((S1ElementType) aElem).getValue ();
+      else
+        aValue = ((S1AttributeType) aElem).getValue ();
       if (aValue != null)
       {
         String sPrefix;
@@ -266,13 +288,22 @@ public class HtmlCreator
       aRow.addCell (aNL);
     }
 
-    // Recurse into children
-    for (final Object aChild : aElem.getElementOrInclude ())
+    if (aElem instanceof S1ElementType)
     {
-      if (aChild instanceof S1ElementType)
-        _createSyntaxRule ((S1ElementType) aChild, nLevel + 1, aTable);
-      else
-        throw new IllegalArgumentException ("Unsupported child: " + aChild);
+      // Add attributes
+      for (final S1AttributeType aAttr : ((S1ElementType) aElem).getAttribute ())
+      {
+        _createSyntaxRule (aAttr, nLevel + 1, aTable);
+      }
+
+      // Recurse into children
+      for (final Object aChild : ((S1ElementType) aElem).getElementOrInclude ())
+      {
+        if (aChild instanceof S1ElementType)
+          _createSyntaxRule ((S1ElementType) aChild, nLevel + 1, aTable);
+        else
+          throw new IllegalArgumentException ("Unsupported child: " + aChild);
+      }
     }
   }
 
