@@ -16,12 +16,14 @@
 package eu.peppol.pubtools.project;
 
 import java.io.File;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
 
 import com.helger.commons.collection.impl.CommonsArrayList;
 import com.helger.commons.io.resource.ClassPathResource;
@@ -33,6 +35,7 @@ import eu.peppol.pubtools.codelist.v1.C1CodeListType;
 import eu.peppol.pubtools.project.v1.ObjectFactory;
 import eu.peppol.pubtools.project.v1.P1ProjectType;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
+import eu.peppol.pubtools.structure.v1.S1ElementType;
 import eu.peppol.pubtools.structure.v1.S1StructureType;
 
 public class ProjectReader
@@ -62,6 +65,28 @@ public class ProjectReader
     return createResolvedProject (aBaseDir, aProject);
   }
 
+  private static void _resolveIncludes (@Nonnull final S1ElementType aElement, @Nonnull final File aParentFile)
+  {
+    final List <Object> aChildren = aElement.getElementOrInclude ();
+    final int nMax = aChildren.size ();
+    for (int i = 0; i < nMax; ++i)
+    {
+      final Object aChild = aChildren.get (i);
+      if (aChild instanceof Element)
+      {
+        final String sPath = ((Element) aChild).getFirstChild ().getNodeValue ();
+        final S1ElementType aChildElement = StructureReader.readElement (new FileSystemResource (aParentFile, sPath));
+        if (aChildElement == null)
+          throw new IllegalArgumentException ("Failed to read include '" + sPath + "'");
+        aChildren.set (i, aChildElement);
+      }
+    }
+
+    for (final Object aChild : aElement.getElementOrInclude ())
+      if (aChild instanceof S1ElementType)
+        _resolveIncludes ((S1ElementType) aChild, aParentFile);
+  }
+
   @Nonnull
   public static ResolvedProject createResolvedProject (@Nonnull final File aBaseDir,
                                                        @Nonnull final P1ProjectType aProject)
@@ -88,9 +113,10 @@ public class ProjectReader
         }
         case STRUCTURE_1:
         {
-          final S1StructureType aStruct = StructureReader.read (new FileSystemResource (aResFile));
+          final S1StructureType aStruct = StructureReader.readStructure (new FileSystemResource (aResFile));
           if (aStruct == null)
             throw new IllegalStateException ("Failed to read structure from " + aResFile.getAbsolutePath ());
+          _resolveIncludes (aStruct.getDocument (), aResFile.getParentFile ());
           ret.addSyntax (aRes, aStruct);
           break;
         }

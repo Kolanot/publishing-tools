@@ -72,7 +72,7 @@ public final class ProjectReaderTest
           case STRUCTURE_1:
           {
             LOGGER.info ("Reading structure file " + aResFile.getAbsolutePath ());
-            final S1StructureType aStruct = StructureReader.read (new FileSystemResource (aResFile));
+            final S1StructureType aStruct = StructureReader.readStructure (new FileSystemResource (aResFile));
             assertNotNull ("Failed to read structure file: " + aResFile.getAbsolutePath (), aStruct);
             break;
           }

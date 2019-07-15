@@ -32,6 +32,7 @@ import com.helger.jaxb.GenericJAXBMarshaller;
 import com.helger.jaxb.validation.WrappedCollectingValidationEventHandler;
 
 import eu.peppol.pubtools.structure.v1.ObjectFactory;
+import eu.peppol.pubtools.structure.v1.S1ElementType;
 import eu.peppol.pubtools.structure.v1.S1StructureType;
 
 public class StructureReader
@@ -44,7 +45,7 @@ public class StructureReader
   {}
 
   @Nullable
-  public static S1StructureType read (@Nonnull final IReadableResource aRes)
+  public static S1StructureType readStructure (@Nonnull final IReadableResource aRes)
   {
     final GenericJAXBMarshaller <S1StructureType> m = new GenericJAXBMarshaller <> (S1StructureType.class,
                                                                                     new CommonsArrayList <> (XSD),
@@ -54,6 +55,26 @@ public class StructureReader
     try
     {
       final S1StructureType ret = m.read (aRes);
+      return ret;
+    }
+    finally
+    {
+      for (final IError aError : aErrorList)
+        LOGGER.error (aError.getAsString (Locale.US));
+    }
+  }
+
+  @Nullable
+  public static S1ElementType readElement (@Nonnull final IReadableResource aRes)
+  {
+    final GenericJAXBMarshaller <S1ElementType> m = new GenericJAXBMarshaller <> (S1ElementType.class,
+                                                                                  new CommonsArrayList <> (XSD),
+                                                                                  new ObjectFactory ()::createElement);
+    final ErrorList aErrorList = new ErrorList ();
+    m.setValidationEventHandlerFactory (x -> new WrappedCollectingValidationEventHandler (aErrorList));
+    try
+    {
+      final S1ElementType ret = m.read (aRes);
       return ret;
     }
     finally

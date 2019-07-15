@@ -46,12 +46,16 @@ import com.helger.html.hc.html.root.HCHtml;
 import com.helger.html.hc.html.script.HCScriptFile;
 import com.helger.html.hc.html.sections.HCBody;
 import com.helger.html.hc.html.sections.HCH4;
+import com.helger.html.hc.html.tabular.HCCol;
+import com.helger.html.hc.html.tabular.HCRow;
 import com.helger.html.hc.html.textlevel.HCA;
 import com.helger.html.hc.html.textlevel.HCBR;
 import com.helger.html.hc.html.textlevel.HCCode;
+import com.helger.html.hc.html.textlevel.HCEM;
 import com.helger.html.hc.html.textlevel.HCSpan;
 import com.helger.html.hc.html.textlevel.HCStrong;
 import com.helger.html.hc.impl.HCNodeList;
+import com.helger.photon.bootstrap4.CBootstrapCSS;
 import com.helger.photon.bootstrap4.breadcrumb.BootstrapBreadcrumb;
 import com.helger.photon.bootstrap4.dropdown.BootstrapDropdownMenu;
 import com.helger.photon.bootstrap4.layout.BootstrapContainer;
@@ -59,6 +63,7 @@ import com.helger.photon.bootstrap4.listgroup.BootstrapListGroup;
 import com.helger.photon.bootstrap4.navbar.BootstrapNavbar;
 import com.helger.photon.bootstrap4.navbar.BootstrapNavbarNav;
 import com.helger.photon.bootstrap4.navbar.BootstrapNavbarToggleable;
+import com.helger.photon.bootstrap4.table.BootstrapTable;
 import com.helger.photon.bootstrap4.utils.BootstrapPageHeader;
 
 import eu.peppol.pubtools.codelist.v1.C1CodeType;
@@ -68,6 +73,9 @@ import eu.peppol.pubtools.project.ResolvedProject;
 import eu.peppol.pubtools.project.ResolvedSyntax;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
 import eu.peppol.pubtools.publish.html.HCSimpleTable;
+import eu.peppol.pubtools.structure.v1.S1ElementType;
+import eu.peppol.pubtools.structure.v1.S1ValueEnum;
+import eu.peppol.pubtools.structure.v1.S1ValueType;
 
 public class HtmlCreator
 {
@@ -207,10 +215,74 @@ public class HtmlCreator
     return aBreadcrumb;
   }
 
+  private static void _createSyntaxRule (@Nonnull final S1ElementType aElem,
+                                         @Nonnegative final int nLevel,
+                                         @Nonnull final BootstrapTable aTable)
+  {
+    final HCRow aRow = aTable.addBodyRow ();
+
+    // Cardinality
+    {
+      String sCard = aElem.getCardinality ();
+      if (sCard == null && nLevel == 0)
+        sCard = "1..1";
+      aRow.addCell (sCard);
+    }
+
+    // Name
+    {
+      final String sName = StringHelper.getRepeated ("• ", nLevel) + aElem.getTerm ().getValue ();
+      aRow.addCell (sName);
+    }
+
+    // Description
+    {
+      final HCNodeList aNL = new HCNodeList ();
+
+      final String sName = aElem.getName () == null ? null : aElem.getName ().getValue ();
+      if (StringHelper.hasText (sName))
+        aNL.addChild (new HCDiv ().addChild (new HCStrong ().addChild (sName)));
+
+      final String sDesc = aElem.getDescription ();
+      if (StringHelper.hasText (sDesc))
+        aNL.addChild (new HCDiv ().addChild (new HCEM ().addChild (sDesc)));
+
+      final S1ValueType aValue = aElem.getValue ();
+      if (aValue != null)
+      {
+        String sPrefix;
+        if (aValue.getType () == S1ValueEnum.FIXED)
+          sPrefix = "Fixed value";
+        else
+          if (aValue.getType () == S1ValueEnum.EXAMPLE)
+            sPrefix = "Example value";
+          else
+            sPrefix = "Default value";
+        aNL.addChild (new HCDiv ().addClass (CBootstrapCSS.MT_1)
+                                  .addChild (sPrefix + ": ")
+                                  .addChild (new HCCode ().addChild (aValue.getValue ())));
+      }
+
+      aRow.addCell (aNL);
+    }
+
+    // Recurse into children
+    for (final Object aChild : aElem.getElementOrInclude ())
+    {
+      if (aChild instanceof S1ElementType)
+        _createSyntaxRule ((S1ElementType) aChild, nLevel + 1, aTable);
+      else
+        throw new IllegalArgumentException ("Unsupported child: " + aChild);
+    }
+  }
+
   private static void _createSyntax (@Nonnull final ResolvedProject aProject,
                                      @Nonnull final ResolvedSyntax aSyntax,
                                      @Nonnull final ResourceMap aResourceMap)
   {
+    final String sDestFilename = "syntax/" + aSyntax.getURLDir () + "/index.html";
+    LOGGER.info ("Creating " + sDestFilename);
+
     final HCHtml aHtml = _createEmptyPage (aProject, 2, aResourceMap);
     aHtml.head ().setPageTitle (aProject.getProject ().getName () + " | " + aSyntax.getTitle ());
     final HCBody aBody = aHtml.body ();
@@ -219,14 +291,23 @@ public class HtmlCreator
     final BootstrapContainer aMain = aBody.addAndReturnChild (new BootstrapContainer ());
     aMain.addChild (new BootstrapPageHeader ().addChild (aSyntax.getTitle ()));
 
-    // TODO
+    final BootstrapTable aTable = aMain.addAndReturnChild (new BootstrapTable (HCCol.perc (5),
+                                                                               HCCol.perc (35),
+                                                                               HCCol.star ()).setStriped (true));
+    aTable.addHeaderRow ().addCells ("Card", "Name", "Description");
 
-    aResourceMap.addHtml ("syntax/" + aSyntax.getURLDir () + "/index.html", aHtml);
+    final S1ElementType aRootElem = aSyntax.getStructure ().getDocument ();
+    _createSyntaxRule (aRootElem, 0, aTable);
+
+    aResourceMap.addHtml (sDestFilename, aHtml);
   }
 
   private static void _createSyntaxOverview (@Nonnull final ResolvedProject aProject,
                                              @Nonnull final ResourceMap aResourceMap)
   {
+    final String sDestFilename = "syntax/index.html";
+    LOGGER.info ("Creating " + sDestFilename);
+
     final ICommonsList <ResolvedSyntax> aList = new CommonsArrayList <> ();
     aProject.forEachSyntax (aList::add);
 
@@ -242,7 +323,7 @@ public class HtmlCreator
     for (final ResolvedSyntax aItem : aList)
       aUL.addItem (new HCA (new SimpleURL (aItem.getURLDir () + "/index.html")).addChild (aItem.getTitle ()));
 
-    aResourceMap.addHtml ("syntax/index.html", aHtml);
+    aResourceMap.addHtml (sDestFilename, aHtml);
 
     // Create all code lists
     for (final ResolvedSyntax aItem : aList)
@@ -260,6 +341,9 @@ public class HtmlCreator
                                        @Nonnull final ResolvedCodeList aCodeList,
                                        @Nonnull final ResourceMap aResourceMap)
   {
+    final String sDestFilename = "codelist/" + aCodeList.getURLDir () + "/index.html";
+    LOGGER.info ("Creating " + sDestFilename);
+
     final HCHtml aHtml = _createEmptyPage (aProject, 2, aResourceMap);
     aHtml.head ().setPageTitle (aProject.getProject ().getName () + " | " + aCodeList.getTitle ());
     final HCBody aBody = aHtml.body ();
@@ -293,12 +377,15 @@ public class HtmlCreator
     }
     aTable.addRow ("Codes", aCodes);
 
-    aResourceMap.addHtml ("codelist/" + aCodeList.getURLDir () + "/index.html", aHtml);
+    aResourceMap.addHtml (sDestFilename, aHtml);
   }
 
   private static void _createCodeListsOverview (@Nonnull final ResolvedProject aProject,
                                                 @Nonnull final ResourceMap aResourceMap)
   {
+    final String sDestFilename = "codelist/index.html";
+    LOGGER.info ("Creating " + sDestFilename);
+
     final ICommonsList <ResolvedCodeList> aList = new CommonsArrayList <> ();
     aProject.forEachCodeList (aList::add);
 
@@ -314,7 +401,7 @@ public class HtmlCreator
     for (final ResolvedCodeList aItem : aList)
       aUL.addItem (new HCA (new SimpleURL (aItem.getURLDir () + "/index.html")).addChild (aItem.getTitle ()));
 
-    aResourceMap.addHtml ("codelist/index.html", aHtml);
+    aResourceMap.addHtml (sDestFilename, aHtml);
 
     // Create all code lists
     for (final ResolvedCodeList aItem : aList)
