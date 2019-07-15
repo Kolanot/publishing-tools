@@ -26,6 +26,7 @@ import com.helger.commons.collection.impl.CommonsLinkedHashMap;
 import com.helger.commons.collection.impl.ICommonsOrderedMap;
 
 import eu.peppol.pubtools.codelist.v1.C1CodeListType;
+import eu.peppol.pubtools.project.v1.P1DocumentationType;
 import eu.peppol.pubtools.project.v1.P1ProjectType;
 import eu.peppol.pubtools.project.v1.P1PropertyType;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
@@ -34,8 +35,8 @@ import eu.peppol.pubtools.structure.v1.S1StructureType;
 public class ResolvedProject
 {
   private final P1ProjectType m_aProject;
-  private final ICommonsOrderedMap <String, ResolvedStructure> m_aResolvedStructure = new CommonsLinkedHashMap <> ();
-  private final ICommonsOrderedMap <String, ResolvedCodeList> m_aResolvedCodeLists = new CommonsLinkedHashMap <> ();
+  private final ICommonsOrderedMap <String, ResolvedStructure> m_aStructures = new CommonsLinkedHashMap <> ();
+  private final ICommonsOrderedMap <String, ResolvedCodeList> m_aCodeLists = new CommonsLinkedHashMap <> ();
   private final ICommonsOrderedMap <String, P1ResourceType> m_aSchematrons = new CommonsLinkedHashMap <> ();
   private final ICommonsOrderedMap <String, ResolvedDownload> m_aDownloads = new CommonsLinkedHashMap <> ();
 
@@ -53,20 +54,26 @@ public class ResolvedProject
 
   public void addCodeList (@Nonnull final P1ResourceType aRes, @Nonnull final C1CodeListType aResolved)
   {
-    m_aResolvedCodeLists.put (aRes.getPath (), new ResolvedCodeList (aRes, aResolved));
+    final String sKey = aRes.getPath ();
+    if (m_aCodeLists.containsKey (sKey))
+      throw new IllegalArgumentException ("Another CodeList with key '" + sKey + "' is already contained!");
+    m_aCodeLists.put (sKey, new ResolvedCodeList (aRes, aResolved));
   }
 
   public void addStructure (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aResolved)
   {
-    m_aResolvedStructure.put (aRes.getPath (), new ResolvedStructure (aRes, aResolved));
+    final String sKey = aRes.getPath ();
+    if (m_aStructures.containsKey (sKey))
+      throw new IllegalArgumentException ("Another Structure with key '" + sKey + "' is already contained!");
+    m_aStructures.put (sKey, new ResolvedStructure (aRes, aResolved));
   }
 
   public void addSchematron (@Nonnull final P1ResourceType aRes)
   {
     final String sKey = aRes.getPath ();
     if (m_aSchematrons.containsKey (sKey))
-      throw new IllegalArgumentException ("Another schematron with key '" + sKey + "' is already contained!");
-    m_aSchematrons.put (aRes.getPath (), aRes);
+      throw new IllegalArgumentException ("Another Schematron with key '" + sKey + "' is already contained!");
+    m_aSchematrons.put (sKey, aRes);
   }
 
   public void addDownload (@Nonnull final P1ResourceType aRes)
@@ -87,37 +94,69 @@ public class ResolvedProject
 
     final String sKey = aFilename.getValue ();
     if (m_aDownloads.containsKey (sKey))
-      throw new IllegalArgumentException ("Another download with key '" + sKey + "' is already contained!");
+      throw new IllegalArgumentException ("Another Download with key '" + sKey + "' is already contained!");
     m_aDownloads.put (sKey, new ResolvedDownload (aRes, sKey, aDownload.getValue ()));
   }
 
-  public void forEachStructure (@Nonnull final Consumer <? super ResolvedStructure> aConsumer)
+  public boolean hasDocumentation ()
+  {
+    return m_aProject.hasDocumentationEntries ();
+  }
+
+  public void forEachDocumentation (@Nonnull final Consumer <? super P1DocumentationType> aConsumer)
+  {
+    // Maintain order "as is"
+    for (final P1DocumentationType x : m_aProject.getDocumentation ())
+      aConsumer.accept (x);
+  }
+
+  public boolean hasSyntax ()
+  {
+    return m_aStructures.isNotEmpty ();
+  }
+
+  public void forEachSyntax (@Nonnull final Consumer <? super ResolvedStructure> aConsumer)
   {
     // Sort
-    for (final ResolvedStructure aEntry : CollectionHelper.getSorted (m_aResolvedStructure.values (),
+    for (final ResolvedStructure aEntry : CollectionHelper.getSorted (m_aStructures.values (),
                                                                       Comparator.comparing (ResolvedStructure::getTitle)))
       aConsumer.accept (aEntry);
+  }
+
+  public boolean hasCodeLists ()
+  {
+    return m_aCodeLists.isNotEmpty ();
   }
 
   public void forEachCodeList (@Nonnull final Consumer <? super ResolvedCodeList> aConsumer)
   {
     // Sort
-    for (final ResolvedCodeList aEntry : CollectionHelper.getSorted (m_aResolvedCodeLists.values (),
+    for (final ResolvedCodeList aEntry : CollectionHelper.getSorted (m_aCodeLists.values (),
                                                                      Comparator.comparing (ResolvedCodeList::getTitle)))
       aConsumer.accept (aEntry);
   }
 
-  public void forEachSchematron (@Nonnull final Consumer <? super P1ResourceType> aConsumer)
+  public boolean hasRules ()
+  {
+    return m_aSchematrons.isNotEmpty ();
+  }
+
+  public void forEachRule (@Nonnull final Consumer <? super P1ResourceType> aConsumer)
   {
     // Maintain order "as is"
-    for (final P1ResourceType r : m_aSchematrons.values ())
-      aConsumer.accept (r);
+    for (final P1ResourceType x : m_aSchematrons.values ())
+      aConsumer.accept (x);
+  }
+
+  public boolean hasDownloads ()
+  {
+    return m_aDownloads.isNotEmpty ();
   }
 
   public void forEachDownload (@Nonnull final Consumer <? super ResolvedDownload> aConsumer)
   {
     // Maintain order "as is"
-    for (final ResolvedDownload r : m_aDownloads.values ())
-      aConsumer.accept (r);
+    for (final ResolvedDownload x : m_aDownloads.values ())
+      aConsumer.accept (x);
   }
 }

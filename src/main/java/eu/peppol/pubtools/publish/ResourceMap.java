@@ -15,16 +15,47 @@
  */
 package eu.peppol.pubtools.publish;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import com.helger.commons.annotation.Nonempty;
 import com.helger.commons.collection.impl.CommonsLinkedHashMap;
+import com.helger.commons.collection.impl.ICommonsList;
 import com.helger.commons.io.resource.IReadableResource;
+import com.helger.commons.io.resource.inmemory.ReadableResourceString;
 import com.helger.commons.io.stream.StreamHelper;
+import com.helger.html.EHTMLVersion;
+import com.helger.html.hc.IHCNode;
+import com.helger.html.hc.config.HCConversionSettings;
+import com.helger.html.hc.config.HCSettings;
+import com.helger.html.hc.html.root.HCHtml;
+import com.helger.html.hc.render.HCRenderer;
 
 public class ResourceMap extends CommonsLinkedHashMap <String, IReadableResource>
 {
+  public void addHtml (@Nonnull @Nonempty final String sRelativeFilename, @Nonnull final HCHtml aHtml)
+  {
+    final HCConversionSettings aConversionSettings = HCSettings.getMutableConversionSettings ();
+    aConversionSettings.setHTMLVersion (EHTMLVersion.HTML5);
+    HCRenderer.prepareForConversion (aHtml, aHtml.body (), aConversionSettings);
+
+    // Extract and merge all inline out-of-band nodes
+    if (aConversionSettings.isExtractOutOfBandNodes ())
+    {
+      final ICommonsList <IHCNode> aOOBNodes = aHtml.getAllOutOfBandNodesWithMergedInlineNodes ();
+      aHtml.addAllOutOfBandNodesToHead (aOOBNodes);
+    }
+
+    // Move scripts to body? If so, after aggregation!
+    if (HCSettings.isScriptsInBody ())
+      aHtml.moveScriptElementsToBody ();
+
+    final String sHtml = HCRenderer.getAsHTMLString (aHtml, aConversionSettings);
+    put (sRelativeFilename, new ReadableResourceString (sHtml, StandardCharsets.UTF_8));
+  }
+
   public void writeAll (@Nonnull final PublishingDestination aDest)
   {
     for (final Map.Entry <String, IReadableResource> aEntry : entrySet ())

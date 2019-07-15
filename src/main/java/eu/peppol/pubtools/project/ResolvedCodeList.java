@@ -18,6 +18,7 @@ package eu.peppol.pubtools.project;
 import javax.annotation.Nonnull;
 
 import com.helger.commons.ValueEnforcer;
+import com.helger.commons.io.file.FilenameHelper;
 
 import eu.peppol.pubtools.codelist.v1.C1CodeListType;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
@@ -26,6 +27,7 @@ public final class ResolvedCodeList
 {
   private final P1ResourceType m_aRes;
   private final C1CodeListType m_aCodeList;
+  private final String m_sURLDir;
 
   public ResolvedCodeList (@Nonnull final P1ResourceType aRes, @Nonnull final C1CodeListType aCodeList)
   {
@@ -33,6 +35,8 @@ public final class ResolvedCodeList
     ValueEnforcer.notNull (aCodeList, "CodeList");
     m_aRes = aRes;
     m_aCodeList = aCodeList;
+    // Ensure that it is a valid filename
+    m_sURLDir = FilenameHelper.getAsSecureValidASCIIFilename (aCodeList.getIdentifier ());
   }
 
   @Nonnull
@@ -50,6 +54,12 @@ public final class ResolvedCodeList
   @Nonnull
   public String getTitle ()
   {
-    return getCodeList ().getTitle ();
+    return m_aCodeList.getTitle ();
+  }
+
+  @Nonnull
+  public String getURLDir ()
+  {
+    return m_sURLDir;
   }
 }

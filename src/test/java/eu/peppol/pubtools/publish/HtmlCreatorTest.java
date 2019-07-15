@@ -43,7 +43,7 @@ public final class HtmlCreatorTest
 
       final PublishingDestination aDest = new PublishingDestination (new File ("temp", aDir.getName ()));
 
-      new HtmlCreator ().publishHome (aResolvedProject, aDest);
+      HtmlCreator.publishHome (aResolvedProject, aDest);
       LOGGER.info ("Publishing took " + aSW.stopAndGetMillis () + "ms");
     }
   }
