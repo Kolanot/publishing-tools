@@ -35,7 +35,7 @@ import eu.peppol.pubtools.structure.v1.S1StructureType;
 public class ResolvedProject
 {
   private final P1ProjectType m_aProject;
-  private final ICommonsOrderedMap <String, ResolvedStructure> m_aStructures = new CommonsLinkedHashMap <> ();
+  private final ICommonsOrderedMap <String, ResolvedSyntax> m_aSyntax = new CommonsLinkedHashMap <> ();
   private final ICommonsOrderedMap <String, ResolvedCodeList> m_aCodeLists = new CommonsLinkedHashMap <> ();
   private final ICommonsOrderedMap <String, P1ResourceType> m_aSchematrons = new CommonsLinkedHashMap <> ();
   private final ICommonsOrderedMap <String, ResolvedDownload> m_aDownloads = new CommonsLinkedHashMap <> ();
@@ -60,12 +60,12 @@ public class ResolvedProject
     m_aCodeLists.put (sKey, new ResolvedCodeList (aRes, aResolved));
   }
 
-  public void addStructure (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aResolved)
+  public void addSyntax (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aResolved)
   {
     final String sKey = aRes.getPath ();
-    if (m_aStructures.containsKey (sKey))
+    if (m_aSyntax.containsKey (sKey))
       throw new IllegalArgumentException ("Another Structure with key '" + sKey + "' is already contained!");
-    m_aStructures.put (sKey, new ResolvedStructure (aRes, aResolved));
+    m_aSyntax.put (sKey, new ResolvedSyntax (aRes, aResolved));
   }
 
   public void addSchematron (@Nonnull final P1ResourceType aRes)
@@ -80,17 +80,16 @@ public class ResolvedProject
   {
     ValueEnforcer.notNull (aRes, "Res");
 
+    // Download is mandatory
     final P1PropertyType aDownload = CollectionHelper.findFirst (aRes.getProperty (),
                                                                  x -> x.getKey ().equals ("download"));
     if (aDownload == null)
       throw new IllegalArgumentException ("Property 'download' is missing");
 
+    // Filename is optional
     P1PropertyType aFilename = CollectionHelper.findFirst (aRes.getProperty (), x -> x.getKey ().equals ("filename"));
     if (aFilename == null)
-    {
-      // Fallback
       aFilename = aDownload;
-    }
 
     final String sKey = aFilename.getValue ();
     if (m_aDownloads.containsKey (sKey))
@@ -112,14 +111,14 @@ public class ResolvedProject
 
   public boolean hasSyntax ()
   {
-    return m_aStructures.isNotEmpty ();
+    return m_aSyntax.isNotEmpty ();
   }
 
-  public void forEachSyntax (@Nonnull final Consumer <? super ResolvedStructure> aConsumer)
+  public void forEachSyntax (@Nonnull final Consumer <? super ResolvedSyntax> aConsumer)
   {
     // Sort
-    for (final ResolvedStructure aEntry : CollectionHelper.getSorted (m_aStructures.values (),
-                                                                      Comparator.comparing (ResolvedStructure::getTitle)))
+    for (final ResolvedSyntax aEntry : CollectionHelper.getSorted (m_aSyntax.values (),
+                                                                   Comparator.comparing (ResolvedSyntax::getTitle)))
       aConsumer.accept (aEntry);
   }
 

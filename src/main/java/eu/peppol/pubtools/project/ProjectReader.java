@@ -91,7 +91,7 @@ public class ProjectReader
           final S1StructureType aStruct = StructureReader.read (new FileSystemResource (aResFile));
           if (aStruct == null)
             throw new IllegalStateException ("Failed to read structure from " + aResFile.getAbsolutePath ());
-          ret.addStructure (aRes, aStruct);
+          ret.addSyntax (aRes, aStruct);
           break;
         }
         case NAMESPACE_1:

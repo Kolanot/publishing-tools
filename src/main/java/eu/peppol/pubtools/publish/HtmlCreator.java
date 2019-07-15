@@ -62,7 +62,7 @@ import eu.peppol.pubtools.codelist.v1.C1CodeType;
 import eu.peppol.pubtools.project.ResolvedCodeList;
 import eu.peppol.pubtools.project.ResolvedDownload;
 import eu.peppol.pubtools.project.ResolvedProject;
-import eu.peppol.pubtools.project.ResolvedStructure;
+import eu.peppol.pubtools.project.ResolvedSyntax;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
 import eu.peppol.pubtools.publish.html.HCSimpleTable;
 
@@ -119,9 +119,9 @@ public class HtmlCreator
       if (aProject.hasSyntax ())
       {
         final BootstrapDropdownMenu aDropDown = new BootstrapDropdownMenu ();
-        final ICommonsOrderedMap <String, ResolvedStructure> aMap = new CommonsLinkedHashMap <> ();
+        final ICommonsOrderedMap <String, ResolvedSyntax> aMap = new CommonsLinkedHashMap <> ();
         aProject.forEachSyntax (x -> aMap.put (x.getTitle (), x));
-        for (final Map.Entry <String, ResolvedStructure> aEntry : aMap.entrySet ())
+        for (final Map.Entry <String, ResolvedSyntax> aEntry : aMap.entrySet ())
         {
           // TODO create link
           aDropDown.createAndAddItem ().addChild (aEntry.getKey ());
@@ -204,7 +204,7 @@ public class HtmlCreator
   }
 
   private static void _createStructure (@Nonnull final ResolvedProject aProject,
-                                        @Nonnull final ResolvedStructure aStruct,
+                                        @Nonnull final ResolvedSyntax aStruct,
                                         @Nonnull final ResourceMap aResourceMap)
   {
 

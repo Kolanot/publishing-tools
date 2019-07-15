@@ -22,12 +22,12 @@ import com.helger.commons.ValueEnforcer;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
 import eu.peppol.pubtools.structure.v1.S1StructureType;
 
-public final class ResolvedStructure
+public final class ResolvedSyntax
 {
   private final P1ResourceType m_aRes;
   private final S1StructureType m_aStructure;
 
-  public ResolvedStructure (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aStructure)
+  public ResolvedSyntax (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aStructure)
   {
     ValueEnforcer.notNull (aRes, "Res");
     ValueEnforcer.notNull (aStructure, "Structure");
