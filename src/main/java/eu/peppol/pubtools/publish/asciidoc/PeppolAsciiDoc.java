@@ -16,12 +16,12 @@
 package eu.peppol.pubtools.publish.asciidoc;
 
 import java.io.File;
-import java.util.HashMap;
 
 import javax.annotation.Nonnull;
 
 import org.asciidoctor.Asciidoctor;
-import org.asciidoctor.ast.Document;
+import org.asciidoctor.OptionsBuilder;
+import org.asciidoctor.SafeMode;
 
 public class PeppolAsciiDoc
 {
@@ -30,12 +30,18 @@ public class PeppolAsciiDoc
   private PeppolAsciiDoc ()
   {}
 
-  @Nonnull
-  public static String parse (@Nonnull final File aFile)
+  private static OptionsBuilder _createBuilder (@Nonnull final File aDstDir)
   {
-    final Document aDoc = INSTANCE.loadFile (aFile, new HashMap <> ());
-    if (aDoc == null)
-      throw new IllegalArgumentException ("Failed to parse " + aFile.getAbsolutePath () + " as AsciiDoc");
-    return aDoc.getContent ().toString ();
+    return OptionsBuilder.options ().mkDirs (true).toDir (aDstDir).safe (SafeMode.UNSAFE);
+  }
+
+  public static void createHTML (@Nonnull final File aSrcFile, @Nonnull final File aDstDir)
+  {
+    INSTANCE.convertFile (aSrcFile, _createBuilder (aDstDir).backend ("html"));
+  }
+
+  public static void createPDF (@Nonnull final File aSrcFile, @Nonnull final File aDstDir)
+  {
+    INSTANCE.convertFile (aSrcFile, _createBuilder (aDstDir).backend ("pdf"));
   }
 }
