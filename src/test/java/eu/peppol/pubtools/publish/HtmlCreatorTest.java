@@ -21,6 +21,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.helger.commons.timing.StopWatch;
+
 import eu.peppol.pubtools.TestData;
 import eu.peppol.pubtools.project.ProjectReader;
 import eu.peppol.pubtools.project.ResolvedProject;
@@ -34,12 +36,15 @@ public final class HtmlCreatorTest
   {
     for (final File aDir : TestData.getTestScenarioDirs ())
     {
+      LOGGER.info ("Publishing home for " + aDir.getAbsolutePath ());
+
+      final StopWatch aSW = StopWatch.createdStarted ();
       final ResolvedProject aResolvedProject = ProjectReader.createResolvedProject (aDir);
 
       final PublishingDestination aDest = new PublishingDestination (new File ("temp", aDir.getName ()));
 
-      LOGGER.info ("Publishing home for " + aDir.getAbsolutePath ());
       new HtmlCreator ().publishHome (aResolvedProject, aDest);
+      LOGGER.info ("Publishing took " + aSW.stopAndGetMillis () + "ms");
     }
   }
 }

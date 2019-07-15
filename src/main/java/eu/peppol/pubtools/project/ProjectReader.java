@@ -20,18 +20,24 @@ import java.io.File;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.helger.commons.collection.impl.CommonsArrayList;
 import com.helger.commons.io.resource.ClassPathResource;
 import com.helger.commons.io.resource.FileSystemResource;
 import com.helger.commons.io.resource.IReadableResource;
 import com.helger.jaxb.GenericJAXBMarshaller;
 
+import eu.peppol.pubtools.codelist.v1.C1CodeListType;
 import eu.peppol.pubtools.project.v1.ObjectFactory;
 import eu.peppol.pubtools.project.v1.P1ProjectType;
 import eu.peppol.pubtools.project.v1.P1ResourceType;
+import eu.peppol.pubtools.structure.v1.S1StructureType;
 
 public class ProjectReader
 {
+  private static final Logger LOGGER = LoggerFactory.getLogger (ProjectReader.class);
   private static final ClassPathResource XSD = new ClassPathResource ("schemas/project-1.xsd",
                                                                       ProjectReader.class.getClassLoader ());
 
@@ -74,21 +80,32 @@ public class ProjectReader
       {
         case CODE_LIST_1:
         {
-          ret.addResolvedResource (aRes, CodeListReader.read (new FileSystemResource (aResFile)));
+          final C1CodeListType aCL = CodeListReader.read (new FileSystemResource (aResFile));
+          if (aCL == null)
+            throw new IllegalStateException ("Failed to read code list from " + aResFile.getAbsolutePath ());
+          ret.addCodeList (aRes, aCL);
           break;
         }
         case STRUCTURE_1:
         {
-          ret.addResolvedResource (aRes, StructureReader.read (new FileSystemResource (aResFile)));
+          final S1StructureType aStruct = StructureReader.read (new FileSystemResource (aResFile));
+          if (aStruct == null)
+            throw new IllegalStateException ("Failed to read structure from " + aResFile.getAbsolutePath ());
+          ret.addStructure (aRes, aStruct);
           break;
         }
         case NAMESPACE_1:
           // Can be ignored according to Erlend
+          LOGGER.info ("Ignoring 'Namespace' resource '" + aRes.getPath () + "'");
           break;
         case NATIVE_FILE:
+        {
+          ret.addDownload (aRes);
+          break;
+        }
         case NATIVE_SCHEMATRON:
         {
-          ret.addNativeResource (aRes);
+          ret.addSchematron (aRes);
           break;
         }
         default:

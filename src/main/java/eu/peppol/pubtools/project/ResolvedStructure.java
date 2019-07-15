@@ -20,17 +20,36 @@ import javax.annotation.Nonnull;
 import com.helger.commons.ValueEnforcer;
 
 import eu.peppol.pubtools.project.v1.P1ResourceType;
+import eu.peppol.pubtools.structure.v1.S1StructureType;
 
-public final class ResolvedResource
+public final class ResolvedStructure
 {
   private final P1ResourceType m_aRes;
-  private final Object m_aResolved;
+  private final S1StructureType m_aStructure;
 
-  public ResolvedResource (@Nonnull final P1ResourceType aRes, @Nonnull final Object aResolved)
+  public ResolvedStructure (@Nonnull final P1ResourceType aRes, @Nonnull final S1StructureType aStructure)
   {
     ValueEnforcer.notNull (aRes, "Res");
-    ValueEnforcer.notNull (aResolved, "Resolved");
+    ValueEnforcer.notNull (aStructure, "Structure");
     m_aRes = aRes;
-    m_aResolved = aResolved;
+    m_aStructure = aStructure;
+  }
+
+  @Nonnull
+  public P1ResourceType getResource ()
+  {
+    return m_aRes;
+  }
+
+  @Nonnull
+  public S1StructureType getStructure ()
+  {
+    return m_aStructure;
+  }
+
+  @Nonnull
+  public String getTitle ()
+  {
+    return m_aRes.getTitle ();
   }
 }
